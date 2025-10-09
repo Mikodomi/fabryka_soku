@@ -1,5 +1,5 @@
 -- A skeleton of an ADA program for an assignment in programming languages
--- WIECEJ SERA
+-- WIECEJ SOKU
 
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
@@ -8,7 +8,6 @@ with Ada.Numerics.Discrete_Random;
 
 
 procedure Simulation is
-
    ----GLOBAL VARIABLES---
 
    Number_Of_Producers: constant Integer := 5;
@@ -19,10 +18,9 @@ procedure Simulation is
    subtype Assembly_Type is Integer range 1 .. Number_Of_Assemblies;
    subtype Consumer_Type is Integer range 1 .. Number_Of_Consumers;
 
-
    --each Producer is assigned a Product that it produces
    Product_Name: constant array (Producer_Type) of String(1 .. 8)
-     := ("Product1", "Product2", "Product3", "Product4", "Product5");
+     := ("Jablko", "Pomarancza", "Marchewka", "Wisnia", "Banan");
    --Assembly is a collection of products
    Assembly_Name: constant array (Assembly_Type) of String(1 .. 9)
      := ("Assembly1", "Assembly2", "Assembly3");
@@ -108,7 +106,7 @@ procedure Simulation is
       Assembly_Type: Integer;
       Consumer_Name: constant array (1 .. Number_Of_Consumers)
         of String(1 .. 9)
-        := ("Consumer1", "Consumer2");
+        := ("Hortex", "Tymbark");
    begin
       accept Start(Consumer_Number: in Consumer_Type;
                    Consumption_Time: in Integer) do
