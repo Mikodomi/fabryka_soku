@@ -190,6 +190,7 @@ procedure Simulation is
        Setup_Variables;
        loop
            select
+           delay 1.0;
            accept Take(Product: in Producer_Type; Number: in Integer) do
                if Can_Accept(Product) then
                    Put_Line(ESC & "[91m" & "B: Accepted product " & Product_Name(Product) & " number " &
