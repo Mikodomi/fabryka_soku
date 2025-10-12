@@ -59,17 +59,22 @@ procedure Simulation is
 
    task body Producer is
       subtype Production_Time_Range is Integer range 1 .. 3;
+      subtype embargo_risk_range is Integer range 0 .. 10;
       package Random_Production is new Ada.Numerics.Discrete_Random(Production_Time_Range);
+      package Random_embargo_risk is new Ada.Numerics.Discrete_Random(embargo_risk_range);
       --  random number generator
       G: Random_Production.Generator;
+      G2: Random_embargo_risk.Generator;
       Producer_Type_Number: Integer;
       Product_Number: Integer;
       Production: Integer;
       Random_Time: Duration;
+      embargo_risk: Integer;
    begin
       accept Start(Product: in Producer_Type; Production_Time: in Integer) do
          --  start random number generator
          Random_Production.Reset(G);
+         Random_embargo_risk.Reset(G2);
          Product_Number := 1;
          Producer_Type_Number := Product;
          Production := Production_Time;
@@ -78,6 +83,10 @@ procedure Simulation is
       loop
          Random_Time := Duration(Random_Production.Random(G));
          delay Random_Time;
+         embargo_risk := Random_embargo_risk.Random(G2);
+         if embargo_risk = 10 then
+            Put_Line("RYZYKO 10");
+         end if;
          Put_Line(ESC & "[93m" & "P: Produced product " & Product_Name(Producer_Type_Number)
                   & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
          -- Accept for storage
