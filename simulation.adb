@@ -19,8 +19,8 @@ procedure Simulation is
    subtype Consumer_Type is Integer range 1 .. Number_Of_Consumers;
 
    --each Producer is assigned a Product that it produces
-   Product_Name: constant array (Producer_Type) of String(1 .. 8)
-     := ("Jablko", "Pomarancza", "Marchewka", "Wisnia", "Banan");
+   Product_Name: constant array (Producer_Type) of String(1 .. 5)
+     := ("Owoc1", "Owoc2", "Owoc3", "Owoc4", "Owoc5");
    --Assembly is a collection of products
    Assembly_Name: constant array (Assembly_Type) of String(1 .. 9)
      := ("Assembly1", "Assembly2", "Assembly3");
@@ -106,7 +106,7 @@ procedure Simulation is
       Assembly_Type: Integer;
       Consumer_Name: constant array (1 .. Number_Of_Consumers)
         of String(1 .. 9)
-        := ("Hortex", "Tymbark");
+        := ("Consumer1", "Consumer2");
    begin
       accept Start(Consumer_Number: in Consumer_Type;
                    Consumption_Time: in Integer) do
