@@ -28,7 +28,8 @@ procedure Simulation is
 
    -- Producer produces determined product
    task type Producer is
-      entry Start (Product : in Producer_Type; Production_Time : in Integer);
+      entry Start(Product: in Producer_Type; Production_Time: in Integer);
+      entry Setup_Max(assembly_use: in Integer; max_from_buffer: in Integer);
    end Producer;
 
    -- Consumer gets an arbitrary assembly of several products from the buffer
@@ -64,17 +65,22 @@ procedure Simulation is
       package Random_embargo_risk is new
         Ada.Numerics.Discrete_Random (embargo_risk_range);
       --  random number generator
-      G                    : Random_Production.Generator;
-      G2                   : Random_embargo_risk.Generator;
-      Producer_Type_Number : Integer;
-      Product_Number       : Integer;
-      Production           : Integer;
-      Random_Time          : Duration;
-      embargo_risk         : Integer;
+      G: Random_Production.Generator;
+      G2: Random_embargo_risk.Generator;
+      Producer_Type_Number: Integer;
+      Product_Number: Integer;
+      Production: Integer;
+      Random_Time: Duration;
+      embargo_risk: Integer;
+      Max: Integer;
+      Assembly_Uses: Integer;
+      
    begin
-      accept Start
-        (Product : in Producer_Type; Production_Time : in Integer)
-      do
+      accept Setup_Max(assembly_use: in Integer; max_from_buffer: in Integer) do
+         Max := max_from_buffer;
+         Assembly_Uses := assembly_use;
+      end Setup_Max;
+      accept Start(Product: in Producer_Type; Production_Time: in Integer) do
          --  start random number generator
          Random_Production.Reset (G);
          Random_embargo_risk.Reset (G2);
@@ -85,7 +91,7 @@ procedure Simulation is
       Put_Line
         (ESC & "[93m" & "P: Started producer of " & Product_Name (Producer_Type_Number) & ESC & "[0m");
       loop
-         Random_Time := Duration (Random_Production.Random (G));
+         Random_Time := Duration(Random_Production.Random(G) + (Max - Assembly_Uses));
          delay Random_Time;
          embargo_risk := Random_embargo_risk.Random (G2);
          if embargo_risk = 10 then
@@ -137,9 +143,14 @@ procedure Simulation is
            Duration (Random_Consumption.Random (G)); --  simulate consumption
          Assembly_Type := Random_Assembly.Random (GA);
          -- take an assembly for consumption
-         B.Deliver (Assembly_Type, Assembly_Number);
-         Put_Line
-           (ESC & "[96m" & "C: " & Consumer_Name (Consumer_Nb) & " takes assembly " & Assembly_Name (Assembly_Type) & " number " & Integer'Image (Assembly_Number) & ESC & "[0m");
+         B.Deliver(Assembly_Type, Assembly_Number);
+         if Assembly_Number = 0 then
+            Put_Line(ESC & "[96m" &"C: " & Consumer_Name(Consumer_Nb) & " didn't take assembly" & ESC & "[0m");
+         else
+            Put_Line(ESC & "[96m" & "C: " & Consumer_Name(Consumer_Nb) & " takes assembly " &
+                       Assembly_Name(Assembly_Type) & " number " &
+                       Integer'Image(Assembly_Number) & ESC & "[0m");
+         end if;
       end loop;
    end Consumer;
 
@@ -154,9 +165,12 @@ procedure Simulation is
         := ((2, 1, 2, 0, 2),
             (1, 2, 0, 1, 0),
             (3, 2, 2, 0, 1));
+      Assembly_Uses: array(Producer_Type) of Integer
+        := (0,0,0,0,0);
       Max_Assembly_Content: array(Producer_Type) of Integer;
       Assembly_Number: array(Assembly_Type) of Integer
         := (1, 1, 1);
+      Max_Assembly_Total: Integer := 0;
       In_Storage: Integer := 0;
       embargo_rounds : constant Integer := 10;
 
@@ -165,11 +179,22 @@ procedure Simulation is
          for W in Producer_Type loop
             Max_Assembly_Content (W) := 0;
             for Z in Assembly_Type loop
-               if Assembly_Content (Z, W) > Max_Assembly_Content (W) then
-                  Max_Assembly_Content (W) := Assembly_Content (Z, W);
+               Assembly_Uses(W) := Assembly_Uses(W) + Assembly_Content(Z,W);
+               if Assembly_Uses(W) > Max_Assembly_Total then
+                  Max_Assembly_Total := Assembly_Uses(W);
+               end if;
+               if Assembly_Content(Z, W) > Max_Assembly_Content(W) then
+                  Max_Assembly_Content(W) := Assembly_Content(Z, W);
                end if;
             end loop;
          end loop;
+         for I in 1 .. Number_Of_Producers loop
+            P(I).Setup_Max(Assembly_Uses(I), Max_Assembly_Total);
+         end loop;
+         --Put_Line(Integer'Image(Max_Assembly_Total));
+         --for W in Producer_Type loop
+         --   Put_Line(Integer'Image(W) & " " & Integer'Image(Assembly_Uses(W)));
+         --end loop;
       end Setup_Variables;
 
       function Needed_Amount_For_Assemblies
