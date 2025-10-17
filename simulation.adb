@@ -60,43 +60,43 @@ procedure Simulation is
    --Producer--
 
    task body Producer is
-       subtype Production_Time_Range is Integer range 1 .. 3;
-       subtype embargo_risk_range is Integer range 0 .. 10;
-       package Random_Production is new Ada.Numerics.Discrete_Random(Production_Time_Range);
-       package Random_embargo_risk is new Ada.Numerics.Discrete_Random(embargo_risk_range);
-       --  random number generator
-       G: Random_Production.Generator;
-       G2: Random_embargo_risk.Generator;
-       Producer_Type_Number: Integer;
-       Product_Number: Integer;
-       Production: Integer;
-       Random_Time: Duration;
-       embargo_risk: Integer;
+      subtype Production_Time_Range is Integer range 1 .. 3;
+      subtype embargo_risk_range is Integer range 0 .. 10;
+      package Random_Production is new Ada.Numerics.Discrete_Random(Production_Time_Range);
+      package Random_embargo_risk is new Ada.Numerics.Discrete_Random(embargo_risk_range);
+      --  random number generator
+      G: Random_Production.Generator;
+      G2: Random_embargo_risk.Generator;
+      Producer_Type_Number: Integer;
+      Product_Number: Integer;
+      Production: Integer;
+      Random_Time: Duration;
+      embargo_risk: Integer;
    begin
-       accept Start(Product: in Producer_Type; Production_Time: in Integer) do
-           --  start random number generator
-           Random_Production.Reset(G);
-           Random_embargo_risk.Reset(G2);
-           Product_Number := 1;
-           Producer_Type_Number := Product;
-           Production := Production_Time;
-       end Start;
-       Put_Line(ESC & "[93m" & "P: Started producer of " & Product_Name(Producer_Type_Number) & ESC & "[0m");
-       loop
-           Random_Time := Duration(Random_Production.Random(G));
-           delay Random_Time;
-           embargo_risk := Random_embargo_risk.Random(G2);
-           if embargo_risk = 10 then
-               B.Impose_Embargo(Producer_Type_Number);
-               delay 40.0;
-               B.Lift_Embargo(Producer_Type_Number);
-           end if;
-           Put_Line(ESC & "[93m" & "P: Produced product " & Product_Name(Producer_Type_Number)
-           & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
-           -- Accept for storage
-           B.Take(Producer_Type_Number, Product_Number);
-           Product_Number := Product_Number + 1;
-       end loop;
+      accept Start(Product: in Producer_Type; Production_Time: in Integer) do
+         --  start random number generator
+         Random_Production.Reset(G);
+         Random_embargo_risk.Reset(G2);
+         Product_Number := 1;
+         Producer_Type_Number := Product;
+         Production := Production_Time;
+      end Start;
+      Put_Line(ESC & "[93m" & "P: Started producer of " & Product_Name(Producer_Type_Number) & ESC & "[0m");
+      loop
+         Random_Time := Duration(Random_Production.Random(G));
+         delay Random_Time;
+         embargo_risk := Random_embargo_risk.Random(G2);
+         if embargo_risk = 10 then
+            B.Impose_Embargo(Producer_Type_Number);
+            delay 40.0;
+            B.Lift_Embargo(Producer_Type_Number);
+         end if;
+         Put_Line(ESC & "[93m" & "P: Produced product " & Product_Name(Producer_Type_Number)
+         & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
+         -- Accept for storage
+         B.Take(Producer_Type_Number, Product_Number);
+         Product_Number := Product_Number + 1;
+      end loop;
    end Producer;
 
 
@@ -200,58 +200,57 @@ procedure Simulation is
       end Storage_Contents;
       procedure Do_Embargo(Product: Producer_Type) is
       begin
-          Put_Line("EMBARGO ON " & Product_Name(Product));
+         Put_Line("EMBARGO ON " & Product_Name(Product));
       end Do_Embargo;
 
       procedure Undo_Embargo(Product: Producer_Type) is
       begin
-          Put_Line("EMBARGO LIFTED ON " & Product_Name(Product));
+         Put_Line("EMBARGO LIFTED ON " & Product_Name(Product));
       end Undo_Embargo;
-          
 
    begin
-       Put_Line(ESC & "[91m" & "B: Buffer started" & ESC & "[0m");
-       Setup_Variables;
-       loop
-           select
-           accept Take(Product: in Producer_Type; Number: in Integer) do
-               if Can_Accept(Product) then
-                   Put_Line(ESC & "[91m" & "B: Accepted product " & Product_Name(Product) & " number " &
-                   Integer'Image(Number)& ESC & "[0m");
-                   Storage(Product) := Storage(Product) + 1;
-                   In_Storage := In_Storage + 1;
-               else
-                   Put_Line(ESC & "[91m" & "B: Rejected product " & Product_Name(Product) & " number " &
-                   Integer'Image(Number)& ESC & "[0m");
-               end if;
-           end Take;
-           Storage_Contents;
-           or  
-           accept Deliver(Assembly: in Assembly_Type; Number: out Integer) do
-               if Can_Deliver(Assembly) then
-                   Put_Line(ESC & "[91m" & "B: Delivered assembly " & Assembly_Name(Assembly) & " number " &
-                   Integer'Image(Assembly_Number(Assembly))& ESC & "[0m");
-                   for W in Producer_Type loop
-                       Storage(W) := Storage(W) - Assembly_Content(Assembly, W);
-                       In_Storage := In_Storage - Assembly_Content(Assembly, W);
-                   end loop;
-                   Number := Assembly_Number(Assembly);
-                   Assembly_Number(Assembly) := Assembly_Number(Assembly) + 1;
-               else
-                   Put_Line(ESC & "[91m" & "B: Lacking products for assembly " & Assembly_Name(Assembly)& ESC & "[0m");
-                   Number := 0;
-               end if;
-           end Deliver;
-           Storage_Contents;
-           or
-           accept Impose_Embargo(Product: in Producer_Type) do
-               Do_Embargo(Product);
-           end Impose_Embargo;
-           or
-           accept Lift_Embargo(Product: in Producer_Type) do
-               Undo_Embargo(Product);
-            end Lift_Embargo;
-       end select;
+      Put_Line(ESC & "[91m" & "B: Buffer started" & ESC & "[0m");
+      Setup_Variables;
+      loop
+         select
+         accept Take(Product: in Producer_Type; Number: in Integer) do
+            if Can_Accept(Product) then
+               Put_Line(ESC & "[91m" & "B: Accepted product " & Product_Name(Product) & " number " &
+               Integer'Image(Number)& ESC & "[0m");
+               Storage(Product) := Storage(Product) + 1;
+               In_Storage := In_Storage + 1;
+            else
+               Put_Line(ESC & "[91m" & "B: Rejected product " & Product_Name(Product) & " number " &
+               Integer'Image(Number)& ESC & "[0m");
+            end if;
+         end Take;
+         Storage_Contents;
+         or  
+         accept Deliver(Assembly: in Assembly_Type; Number: out Integer) do
+            if Can_Deliver(Assembly) then
+               Put_Line(ESC & "[91m" & "B: Delivered assembly " & Assembly_Name(Assembly) & " number " &
+               Integer'Image(Assembly_Number(Assembly))& ESC & "[0m");
+               for W in Producer_Type loop
+                  Storage(W) := Storage(W) - Assembly_Content(Assembly, W);
+                  In_Storage := In_Storage - Assembly_Content(Assembly, W);
+               end loop;
+               Number := Assembly_Number(Assembly);
+               Assembly_Number(Assembly) := Assembly_Number(Assembly) + 1;
+            else
+               Put_Line(ESC & "[91m" & "B: Lacking products for assembly " & Assembly_Name(Assembly)& ESC & "[0m");
+               Number := 0;
+            end if;
+         end Deliver;
+         Storage_Contents;
+         or
+         accept Impose_Embargo(Product: in Producer_Type) do
+            Do_Embargo(Product);
+         end Impose_Embargo;
+         or
+         accept Lift_Embargo(Product: in Producer_Type) do
+            Undo_Embargo(Product);
+         end Lift_Embargo;
+         end select;
       end loop;
    end Buffer;
 
