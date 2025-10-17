@@ -43,7 +43,9 @@ procedure Simulation is
       -- Accept a product to the storage (provided there is a room for it)
       entry Take (Product : in Producer_Type; Number : in Integer);
       -- Deliver an assembly (provided there are enough products for it)
-      entry Deliver (Assembly : in Assembly_Type; Number : out Integer);
+      entry Deliver(Assembly: in Assembly_Type; Number: out Integer);
+      entry Impose_Embargo(Product: in Producer_Type);
+      entry Lift_Embargo(Product: in Producer_Type);
    end Buffer;
 
    P : array (1 .. Number_Of_Producers) of Producer;
@@ -87,10 +89,12 @@ procedure Simulation is
          delay Random_Time;
          embargo_risk := Random_embargo_risk.Random (G2);
          if embargo_risk = 10 then
-            Put_Line ("RYZYKO 10");
+            B.Impose_Embargo(Producer_Type_Number);
+            delay 40.0;
+            B.Lift_Embargo(Producer_Type_Number);
          end if;
-         Put_Line
-           (ESC & "[93m" & "P: Produced product " & Product_Name (Producer_Type_Number) & " number " & Integer'Image (Product_Number) & ESC & "[0m");
+         Put_Line(ESC & "[93m" & "P: Produced product " & Product_Name(Producer_Type_Number)
+         & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
          -- Accept for storage
          B.Take (Producer_Type_Number, Product_Number);
          Product_Number := Product_Number + 1;
@@ -144,12 +148,17 @@ procedure Simulation is
    task body Buffer is
       Storage_Capacity     : constant Integer := 30;
       type Storage_type is array (Producer_Type) of Integer;
-      Storage              : Storage_type := (0, 0, 0, 0, 0);
-      Assembly_Content     : array (Assembly_Type, Producer_Type) of Integer :=
-        ((2, 1, 2, 0, 2), (1, 2, 0, 1, 0), (3, 2, 2, 0, 1));
-      Max_Assembly_Content : array (Producer_Type) of Integer;
-      Assembly_Number      : array (Assembly_Type) of Integer := (1, 1, 1);
-      In_Storage           : Integer := 0;
+      Storage: Storage_type
+        := (0, 0, 0, 0, 0);
+      Assembly_Content: array(Assembly_Type, Producer_Type) of Integer
+        := ((2, 1, 2, 0, 2),
+            (1, 2, 0, 1, 0),
+            (3, 2, 2, 0, 1));
+      Max_Assembly_Content: array(Producer_Type) of Integer;
+      Assembly_Number: array(Assembly_Type) of Integer
+        := (1, 1, 1);
+      In_Storage: Integer := 0;
+      embargo_rounds : constant Integer := 10;
 
       procedure Setup_Variables is
       begin
@@ -205,48 +214,58 @@ procedure Simulation is
            ("|   Number of products in storage: " & Integer'Image (In_Storage));
 
       end Storage_Contents;
+      procedure Do_Embargo(Product: Producer_Type) is
+      begin
+         Put_Line("EMBARGO ON " & Product_Name(Product));
+      end Do_Embargo;
+
+      procedure Undo_Embargo(Product: Producer_Type) is
+      begin
+         Put_Line("EMBARGO LIFTED ON " & Product_Name(Product));
+      end Undo_Embargo;
 
    begin
-      Put_Line (ESC & "[91m" & "B: Buffer started" & ESC & "[0m");
+      Put_Line(ESC & "[91m" & "B: Buffer started" & ESC & "[0m");
       Setup_Variables;
       loop
          select
-            delay 1.0;
-            accept Take (Product : in Producer_Type; Number : in Integer) do
-               if Can_Accept (Product) then
-                  Put_Line
-                    (ESC & "[91m" & "B: Accepted product " & Product_Name (Product) & " number " & Integer'Image (Number) & ESC & "[0m");
-                  Storage (Product) := Storage (Product) + 1;
-                  In_Storage := In_Storage + 1;
-               else
-                  Put_Line
-                    (ESC & "[91m" & "B: Rejected product " & Product_Name (Product) & " number " & Integer'Image (Number) & ESC & "[0m");
-               end if;
-            end Take;
-            Storage_Contents;
+         accept Take(Product: in Producer_Type; Number: in Integer) do
+            if Can_Accept(Product) then
+               Put_Line(ESC & "[91m" & "B: Accepted product " & Product_Name(Product) & " number " &
+               Integer'Image(Number)& ESC & "[0m");
+               Storage(Product) := Storage(Product) + 1;
+               In_Storage := In_Storage + 1;
+            else
+               Put_Line(ESC & "[91m" & "B: Rejected product " & Product_Name(Product) & " number " &
+               Integer'Image(Number)& ESC & "[0m");
+            end if;
+         end Take;
+         Storage_Contents;
+         or  
+         accept Deliver(Assembly: in Assembly_Type; Number: out Integer) do
+            if Can_Deliver(Assembly) then
+               Put_Line(ESC & "[91m" & "B: Delivered assembly " & Assembly_Name(Assembly) & " number " &
+               Integer'Image(Assembly_Number(Assembly))& ESC & "[0m");
+               for W in Producer_Type loop
+                  Storage(W) := Storage(W) - Assembly_Content(Assembly, W);
+                  In_Storage := In_Storage - Assembly_Content(Assembly, W);
+               end loop;
+               Number := Assembly_Number(Assembly);
+               Assembly_Number(Assembly) := Assembly_Number(Assembly) + 1;
+            else
+               Put_Line(ESC & "[91m" & "B: Lacking products for assembly " & Assembly_Name(Assembly)& ESC & "[0m");
+               Number := 0;
+            end if;
+         end Deliver;
+         Storage_Contents;
          or
-            accept Deliver
-              (Assembly : in Assembly_Type; Number : out Integer)
-            do
-               if Can_Deliver (Assembly) then
-                  Put_Line
-                    (ESC
-                  & "[91m" & "B: Delivered assembly " & Assembly_Name (Assembly) & " number " & Integer'Image (Assembly_Number (Assembly)) & ESC & "[0m");
-                  for W in Producer_Type loop
-                     Storage (W) :=
-                       Storage (W) - Assembly_Content (Assembly, W);
-                     In_Storage := In_Storage - Assembly_Content (Assembly, W);
-                  end loop;
-                  Number := Assembly_Number (Assembly);
-                  Assembly_Number (Assembly) := Assembly_Number (Assembly) + 1;
-               else
-                  Put_Line
-                    (ESC & "[91m" & "B: Lacking products for assembly " & Assembly_Name (Assembly) & ESC & "[0m");
-                  Number := 0;
-
-               end if;
-            end Deliver;
-            Storage_Contents;
+         accept Impose_Embargo(Product: in Producer_Type) do
+            Do_Embargo(Product);
+         end Impose_Embargo;
+         or
+         accept Lift_Embargo(Product: in Producer_Type) do
+            Undo_Embargo(Product);
+         end Lift_Embargo;
          end select;
       end loop;
    end Buffer;
