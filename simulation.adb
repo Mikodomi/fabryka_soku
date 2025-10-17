@@ -18,11 +18,11 @@ procedure Simulation is
    subtype Consumer_Type is Integer range 1 .. Number_Of_Consumers;
 
    --each Producer is assigned a Product that it produces
-   Product_Name  : constant array (Producer_Type) of String (1 .. 5) :=
-     ("Owoc1", "Owoc2", "Owoc3", "Owoc4", "Owoc5");
+   Product_Name  : constant array (Producer_Type) of String (1 .. 10) :=
+     ("Jablko    ", "Wisnia    ", "Banan     ", "Arbuz     ", "Porzeczka ");
    --Assembly is a collection of products
-   Assembly_Name : constant array (Assembly_Type) of String (1 .. 9) :=
-     ("Assembly1", "Assembly2", "Assembly3");
+   Assembly_Name : constant array (Assembly_Type) of String (1 .. 19) :=
+     ("Wieloowocowy       ", "Jablko-wisnia-arbuz", "Multiwitamina      ");
 
    ----TASK DECLARATIONS----
 
@@ -99,7 +99,7 @@ procedure Simulation is
             delay 40.0;
             B.Lift_Embargo(Producer_Type_Number);
          end if;
-         Put_Line(ESC & "[93m" & "P: Produced product " & Product_Name(Producer_Type_Number)
+         Put_Line(ESC & "[93m" & "P: Produced fruit " & Product_Name(Producer_Type_Number)
          & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
          -- Accept for storage
          B.Take (Producer_Type_Number, Product_Number);
@@ -125,8 +125,8 @@ procedure Simulation is
       Consumption     : Integer;
       Assembly_Type   : Integer;
       Consumer_Name   :
-        constant array (1 .. Number_Of_Consumers) of String (1 .. 9) :=
-          ("Consumer1", "Consumer2");
+        constant array (1 .. Number_Of_Consumers) of String (1 .. 7) :=
+          ("Wortex ", "Wymbark");
    begin
       accept Start
         (Consumer_Number : in Consumer_Type; Consumption_Time : in Integer)
@@ -137,7 +137,7 @@ procedure Simulation is
          Consumption := Consumption_Time;
       end Start;
       Put_Line
-        (ESC & "[96m" & "C: Started consumer " & Consumer_Name (Consumer_Nb) & ESC & "[0m");
+        (ESC & "[96m" & "C: Started company " & Consumer_Name (Consumer_Nb) & ESC & "[0m");
       loop
          delay
            Duration (Random_Consumption.Random (G)); --  simulate consumption
@@ -145,9 +145,9 @@ procedure Simulation is
          -- take an assembly for consumption
          B.Deliver(Assembly_Type, Assembly_Number);
          if Assembly_Number = 0 then
-            Put_Line(ESC & "[96m" &"C: " & Consumer_Name(Consumer_Nb) & " didn't take assembly" & ESC & "[0m");
+            Put_Line(ESC & "[96m" &"C: " & Consumer_Name(Consumer_Nb) & " didn't take juice" & ESC & "[0m");
          else
-            Put_Line(ESC & "[96m" & "C: " & Consumer_Name(Consumer_Nb) & " takes assembly " &
+            Put_Line(ESC & "[96m" & "C: " & Consumer_Name(Consumer_Nb) & " takes juice " &
                        Assembly_Name(Assembly_Type) & " number " &
                        Integer'Image(Assembly_Number) & ESC & "[0m");
          end if;
@@ -236,7 +236,7 @@ procedure Simulation is
               ("|   Storage contents: " & Integer'Image (Storage (W)) & " " & Product_Name (W));
          end loop;
          Put_Line
-           ("|   Number of products in storage: " & Integer'Image (In_Storage));
+           ("|   Number of fruits in storage: " & Integer'Image (In_Storage));
 
       end Storage_Contents;
       procedure Do_Embargo(Product: Producer_Type) is
@@ -256,12 +256,12 @@ procedure Simulation is
          select
          accept Take(Product: in Producer_Type; Number: in Integer) do
             if Can_Accept(Product) then
-               Put_Line(ESC & "[91m" & "B: Accepted product " & Product_Name(Product) & " number " &
+               Put_Line(ESC & "[91m" & "B: Accepted fruit " & Product_Name(Product) & " number " &
                Integer'Image(Number)& ESC & "[0m");
                Storage(Product) := Storage(Product) + 1;
                In_Storage := In_Storage + 1;
             else
-               Put_Line(ESC & "[91m" & "B: Rejected product " & Product_Name(Product) & " number " &
+               Put_Line(ESC & "[91m" & "B: Rejected fruit " & Product_Name(Product) & " number " &
                Integer'Image(Number)& ESC & "[0m");
             end if;
          end Take;
@@ -269,7 +269,7 @@ procedure Simulation is
          or  
          accept Deliver(Assembly: in Assembly_Type; Number: out Integer) do
             if Can_Deliver(Assembly) then
-               Put_Line(ESC & "[91m" & "B: Delivered assembly " & Assembly_Name(Assembly) & " number " &
+               Put_Line(ESC & "[91m" & "B: Delivered juice " & Assembly_Name(Assembly) & " number " &
                Integer'Image(Assembly_Number(Assembly))& ESC & "[0m");
                for W in Producer_Type loop
                   Storage(W) := Storage(W) - Assembly_Content(Assembly, W);
@@ -278,7 +278,7 @@ procedure Simulation is
                Number := Assembly_Number(Assembly);
                Assembly_Number(Assembly) := Assembly_Number(Assembly) + 1;
             else
-               Put_Line(ESC & "[91m" & "B: Lacking products for assembly " & Assembly_Name(Assembly)& ESC & "[0m");
+               Put_Line(ESC & "[91m" & "B: Lacking fruits for juice " & Assembly_Name(Assembly)& ESC & "[0m");
                Number := 0;
             end if;
          end Deliver;
