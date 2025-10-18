@@ -102,8 +102,18 @@ procedure Simulation is
          Put_Line(ESC & "[93m" & "P: Produced fruit " & Product_Name(Producer_Type_Number)
          & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
          -- Accept for storage
-         B.Take (Producer_Type_Number, Product_Number);
-         Product_Number := Product_Number + 1;
+         select
+            B.Take (Producer_Type_Number, Product_Number);
+            Product_Number := Product_Number + 1;
+         Put_Line(ESC & "[93m" & "P: Delivered fruit " & Product_Name(Producer_Type_Number)
+         & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
+         or
+         delay Random_Time;
+         Put_Line(ESC & "[93m" & "P: Couldn't deliver fruit to the buffer, lost " & Product_Name(Producer_Type_Number)
+         & " number "  & Integer'Image(Product_Number) & ESC & "[0m");
+            Product_Number := Product_Number + 1;
+      end  select;
+
       end loop;
    end Producer;
 
